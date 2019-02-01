@@ -52,7 +52,6 @@ except:
 
 fileIter = csv.reader(eventsFile, delimiter=',')
 lineNum = 0
-usefulEvents = []
 for row in fileIter:
     if lineNum == 0:
         print(row)
