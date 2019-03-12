@@ -3,18 +3,14 @@
 # zac@hacklabs.com - 25 Jan 2019
 
 import csv, sys, re
-
+from datetime import datetime, timedelta
 months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 def row_handle(row):
     (email, date_time, action_type, raw_details) = row
     
-    #Parse datetime
-    dt_matches = re.match('\d{4}-(\d\d)-(\d\d)T(\d\d:\d\d):\d\dZ', date_time)
-    month = months[int(dt_matches.group(1))]
-    day = dt_matches.group(2)
-    time = dt_matches.group(3)
-    new_date_time = day + " " + month + " - " + str(time)
+    dt_obj = datetime.strptime(date_time, "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=11)
+    new_date_time = dt_obj.strftime("%a %d %b - %H:%M")
 
     if (action_type == "Email Opened"):
         at_matches = re.match('.*"address":"(\d+\.\d+\.\d+\.\d+)".*', raw_details)
