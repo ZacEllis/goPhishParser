@@ -2,13 +2,15 @@
 # Parse goPhish csv for pretty tables
 # zac@hacklabs.com - 25 Jan 2019
 
-import csv, sys, re
+import csv
+import re
+import sys
 from datetime import datetime, timedelta
-months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
 
 def row_handle(row):
     (email, date_time, action_type, raw_details) = row
-    
+
     dt_obj = datetime.strptime(date_time, "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=11)
     new_date_time = dt_obj.strftime("%a %d %b - %H:%M")
 
@@ -20,24 +22,30 @@ def row_handle(row):
         details = "IP_Address: " + at_matches.group(1)
 
     elif (action_type == "Submitted Data"):
-        un_match = re.match('.*"user.*?":\["(.*?)"\].*', raw_details, re.IGNORECASE)
-        username = "Username: " + un_match.group(1)
-        pw_match = re.match('.*"pass.*?":\["(.*?)"\].*', raw_details, re.IGNORECASE)
+        un_match = re.match('.*"Username.*?":\["(.*?)"\].*', raw_details, re.IGNORECASE)
+        try:
+            username = "Email: " + un_match.group(1)
+        except:
+            username = "USERNAME PARSE ERROR"
+            print("Uhhh, he's dead jim - " + raw_details, sys.stderr)
+        pw_match = re.match('.*"pas.*?":\["(.*?)"\].*', raw_details, re.IGNORECASE)
         raw_password = pw_match.group(1)
-        password = "Password: " + (raw_password[:2] + "*"*(len(raw_password)-4) + raw_password[-2] + raw_password[-1])
+        password = f"Password: {raw_password[:2]}" + "*" * (len(raw_password) - 4) + f"{raw_password[-2]}{raw_password[-1]}"
         details = username + "; " + password
 
-    else: 
-        ValueError ("Action type did not match known types. Unexpected action: " + action_type)
+    elif (action_type == "Email Reported"):
+        details = "-"
 
-    new_row = email+"," +new_date_time+"," + action_type+"," +details
+    else:
+        raise ValueError("Action type did not match known types. Unexpected action: " + action_type)
+
+    new_row = f"{email},{new_date_time},{action_type},{details}"
 
     return new_row
 
 
-
-if len(sys.argv) != 2: 
-    print("Usage:", sys.argv[0],"<goPhish-Events-file.csv>")
+if len(sys.argv) != 2:
+    print(f"Usage: {sys.argv[0]} <goPhish-Events-file.csv>")
     exit()
 
 try:
@@ -51,9 +59,6 @@ lineNum = 0
 for row in fileIter:
     if lineNum == 0:
         print(row)
-    elif lineNum >= 2 and row[2] != "Email Sent": # Ignore lineNum=1 because that's 'campaign created'
-        print (row_handle(row))
+    elif lineNum >= 2 and row[2] != "Email Sent":  # Ignore second line that's 'campaign created'
+        print(row_handle(row))
     lineNum += 1
-
-
-
