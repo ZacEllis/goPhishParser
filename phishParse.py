@@ -15,23 +15,27 @@ def row_handle(row):
     new_date_time = dt_obj.strftime("%a %d %b - %H:%M")
 
     if (action_type == "Email Opened"):
-        at_matches = re.match('.*"address":"(\d+\.\d+\.\d+\.\d+)".*', raw_details)
+        at_matches = re.match(r'.*"address":"(\d+\.\d+\.\d+\.\d+)".*', raw_details)
         details = "IP_Address: " + at_matches.group(1)
     elif (action_type == "Clicked Link"):
-        at_matches = re.match('.*"address":"(\d+\.\d+\.\d+\.\d+)".*', raw_details)
+        at_matches = re.match(r'.*"address":"(\d+\.\d+\.\d+\.\d+)".*', raw_details)
         details = "IP_Address: " + at_matches.group(1)
 
     elif (action_type == "Submitted Data"):
-        un_match = re.match('.*"Username.*?":\["(.*?)"\].*', raw_details, re.IGNORECASE)
+        un_match = re.match(r'.*"email.*?":\["(.*?)"\].*', raw_details, re.IGNORECASE)
         try:
             username = "Email: " + un_match.group(1)
-        except:
-            username = "USERNAME PARSE ERROR"
-            print("Uhhh, he's dead jim - " + raw_details, sys.stderr)
-        pw_match = re.match('.*"pas.*?":\["(.*?)"\].*', raw_details, re.IGNORECASE)
-        raw_password = pw_match.group(1)
-        password = f"Password: {raw_password[:2]}" + "*" * (len(raw_password) - 4) + f"{raw_password[-2]}{raw_password[-1]}"
-        details = username + "; " + password
+        except Exception as e:
+            username = "-"
+            sys.stderr.write(f"Processing email: {e} - {raw_details}\n")
+        pw_match = re.match(r'.*"pas.*?":\["(.*?)"\].*', raw_details, re.IGNORECASE)
+        try:
+            raw_pw = pw_match.group(1)
+            pwd = f"Password: {raw_pw[:2]}" + "*" * (len(raw_pw) - 4) + f"{raw_pw[-2]}{raw_pw[-1]}"
+        except Exception as e:
+            pwd = "No Password Received"
+            sys.stderr.write(f"Processing pwd: {e} - {raw_details}\n")
+        details = username + "; " + pwd
 
     elif (action_type == "Email Reported"):
         details = "-"
@@ -50,7 +54,7 @@ if len(sys.argv) != 2:
 
 try:
     eventsFile = open(sys.argv[1])
-except:
+except Exception as _:
     print(f"Error opening file \"{sys.argv[1]}\"")
     exit()
 
